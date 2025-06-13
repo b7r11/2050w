@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <title>توريد يوزرات</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <h1>زر توريد اليوزرات</h1>
+    <button id="supplyBtn">توريد 20 يوزر</button>
+    <ul id="usersList"></ul>
+
+    <script>
+        async function supplyUsers() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            if (!code) {
+                alert('الكود مفقود!');
+                return;
+            }
+
+            const res = await fetch('/verify-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+                alert('الكود غير صالح أو مستخدم.');
+                return;
+            }
+
+            const supplyRes = await fetch('/supply-users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const supplyData = await supplyRes.json();
+            if (supplyData.success) {
+                const list = document.getElementById('usersList');
+                list.innerHTML = '';
+                supplyData.users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = JSON.stringify(user);
+                    list.appendChild(li);
+                });
+            }
+        }
+
+        document.getElementById('supplyBtn').addEventListener('click', supplyUsers);
+    </script>
+</body>
+</html>
