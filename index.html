@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <title>تسجيل الكود</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <h1>أدخل الكود الخاص بك</h1>
+    <input type="text" id="codeInput" placeholder="ادخل الكود هنا" />
+    <button onclick="verifyCode()">تحقق</button>
+
+    <p id="message"></p>
+
+    <script>
+        async function verifyCode() {
+            const code = document.getElementById('codeInput').value;
+            const res = await fetch('/verify-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await res.json();
+            const msg = document.getElementById('message');
+            if (data.success) {
+                window.location.href = 'code.html?code=' + encodeURIComponent(code);
+            } else {
+                msg.textContent = 'الكود غير صالح أو مستخدم من قبل.';
+                msg.style.color = 'red';
+            }
+        }
+    </script>
+</body>
+</html>
