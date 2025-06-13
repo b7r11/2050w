@@ -1,46 +1,48 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const fs = require('fs');
 const app = express();
+const PORT = 3000;
 
-app.use(bodyParser.json());
-app.use(express.static(__dirname)); // يخدم الملفات من نفس المجلد
+app.use(express.json());
+app.use(express.static(__dirname));
 
-// تحقق من الكود عند الإدخال
-app.post('/verify-code', (req, res) => {
-    const code = req.body.code;
-    let codes = [];
+// قراءة ملفات JSON
+function readJSON(file) {
+    return JSON.parse(fs.readFileSync(`${__dirname}/${file}`));
+}
 
-    if (fs.existsSync('codes.json')) {
-        codes = JSON.parse(fs.readFileSync('codes.json'));
-    }
+// كتابة ملفات JSON
+function writeJSON(file, data) {
+    fs.writeFileSync(`${__dirname}/${file}`, JSON.stringify(data, null, 2));
+}
 
+// API: جلب عدد المستخدمين
+app.get('/api/usercount', (req, res) => {
+    const users = readJSON('users.json');
+    res.json({ count: users.length });
+});
+
+// API: تحقق من الكود
+app.post('/api/checkcode', (req, res) => {
+    const { code } = req.body;
+    let codes = readJSON('codes.json');
     if (codes.includes(code)) {
-        // حذف الكود بعد استخدامه
+        // حذف الكود
         codes = codes.filter(c => c !== code);
-        fs.writeFileSync('codes.json', JSON.stringify(codes, null, 2));
+        writeJSON('codes.json', codes);
         res.json({ success: true });
     } else {
         res.json({ success: false });
     }
 });
 
-// توريد يوزرات - تسليم 20 يوزر عشوائي وحذفهم من الملف
-app.post('/supply-users', (req, res) => {
-    const usersRaw = fs.readFileSync('users.json', 'utf-8');
-    let users = usersRaw.trim() === '' ? [] : usersRaw.trim().split('\n').map(line => line.trim().replace(/^"|"$/g, ''));
-
-    const selected = [];
-
-    while (selected.length < 20 && users.length > 0) {
-        const index = Math.floor(Math.random() * users.length);
-        selected.push(users.splice(index, 1)[0]);
-    }
-
-    const usersToWrite = users.map(u => `"${u}"`).join('\n');
-    fs.writeFileSync('users.json', usersToWrite);
-
-    res.json({ success: true, users: selected });
+// API: جلب 20 مستخدم عشوائي
+app.get('/api/randomusers', (req, res) => {
+    const users = readJSON('users.json');
+    const shuffled = users.sort(() => 0.5 - Math.random());
+    res.json({ users: shuffled.slice(0, 20) });
 });
 
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
